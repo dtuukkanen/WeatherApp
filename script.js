@@ -3,6 +3,7 @@ const openWeatherMapApiKey = apiKeys.OPEN_WEATHER_MAP;
 
 const locationSearch = document.getElementById("location-search");
 const searchResults = document.getElementById("location-list");
+const geolocation = document.getElementById("geolocation");
 
 getOpenWeatherMapData = async (latitude, longitude) => {
     const response = await fetch(
@@ -47,4 +48,11 @@ const updateDropdown = (locations) => {
     searchResults.classList.add("show");
 };
 
+const getGeolocation = () => {
+    navigator.geolocation.getCurrentPosition((position) => {
+        getOpenWeatherMapData(position.coords.latitude, position.coords.longitude);
+    });
+}
+
 locationSearch.addEventListener("input", getLocationInformation);
+geolocation.addEventListener("click", getGeolocation);
