@@ -10,16 +10,29 @@
     <script src="script.js" defer></script>
 </head>
 <body>
-    <!-- Search button -->
-    <div class="dropdown">
-        <input type="text" id="location-search" placeholder="Search location" class="form-control">
-        <ul class = "dropdown-menu" id="location-list"></ul>
-    </div>
+    <div class="row">
+        <!-- Search button -->
+        <div class="col">
+            <div class="dropdown">
+                <input type="text" id="location-search" placeholder="Search location" class="form-control">
+                <ul class="dropdown-menu" id="location-list"></ul>
+            </div>
+        </div>
+        
+        <!-- Geolocation button -->
+        <div class="col">
+            <button id="geolocation" class="btn btn-primary">Use my location
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+                </svg>
+            </button>
+        </div>
 
-    <!-- Celsius or Fahrenheit -->
-     <div>
-         <button id="celsius">Celsius</button>
-         <button id="fahrenheit">Fahrenheit</button>
-     </div>
+        <!-- Celsius or Fahrenheit -->
+        <div class="col">
+            <button id="celsius">Celsius</button>
+            <button id="fahrenheit">Fahrenheit</button>
+        </div>
+    </div>
 </body>
 </html>
