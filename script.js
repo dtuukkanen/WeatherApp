@@ -4,6 +4,8 @@ const openWeatherMapApiKey = apiKeys.OPEN_WEATHER_MAP;
 const locationSearch = document.getElementById("location-search");
 const searchResults = document.getElementById("location-list");
 const geolocation = document.getElementById("geolocation");
+const fahrenheitCelsius = document.getElementById("fahrenheit-celsius");
+let temperatureUnitInUse = "celsius";
 
 getOpenWeatherMapData = async (latitude, longitude) => {
     const response = await fetch(
@@ -54,5 +56,13 @@ const getGeolocation = () => {
     });
 }
 
+const temperatureToggle = () => {
+    fahrenheitCelsius.textContent = fahrenheitCelsius.textContent === "˚F" ? "˚C" : "˚F";
+    temperatureUnitInUse = temperatureUnitInUse === "celsius" ? "fahrenheit" : "celsius";
+    console.log(fahrenheitCelsius.textContent);
+    console.log(temperatureUnitInUse);
+}
+
 locationSearch.addEventListener("input", getLocationInformation);
 geolocation.addEventListener("click", getGeolocation);
+fahrenheitCelsius.addEventListener("click", temperatureToggle);
