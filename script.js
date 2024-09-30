@@ -5,7 +5,9 @@ const locationSearch = document.getElementById("location-search");
 const searchResults = document.getElementById("location-list");
 const geolocation = document.getElementById("geolocation");
 const fahrenheitCelsius = document.getElementById("fahrenheit-celsius");
-let temperatureUnitInUse = "celsius";
+const weatherOfTheDay = document.getElementById("weather-of-the-day");
+let temperatureUnitInUse = "°C";
+let latestWeatherData = null;
 
 getOpenWeatherMapData = async (latitude, longitude) => {
     const response = await fetch(
@@ -13,6 +15,8 @@ getOpenWeatherMapData = async (latitude, longitude) => {
     );
     const data = await response.json();
     console.log(data);
+    latestWeatherData = data;
+    showWeatherOfTheDay(data);
 };
 
 getLocationInformation = async () => {
@@ -57,10 +61,69 @@ const getGeolocation = () => {
 }
 
 const temperatureToggle = () => {
-    fahrenheitCelsius.textContent = fahrenheitCelsius.textContent === "˚F" ? "˚C" : "˚F";
-    temperatureUnitInUse = temperatureUnitInUse === "celsius" ? "fahrenheit" : "celsius";
-    console.log(fahrenheitCelsius.textContent);
-    console.log(temperatureUnitInUse);
+    temperatureUnitInUse = temperatureUnitInUse === "°C" ? "°F" : "°C";
+    fahrenheitCelsius.textContent = temperatureUnitInUse;
+    if (latestWeatherData) {
+        showWeatherOfTheDay(latestWeatherData);
+    }
+}
+
+const showWeatherOfTheDay = (data) => {
+    // Clear the weather of the day div
+    weatherOfTheDay.innerHTML = "";
+
+    // Get current weather information
+    const city = data.name;
+    const weatherIcon = data.weather[0].icon;
+    const temperature = convertTemperature(data.main.temp);
+    const temperaturemin = convertTemperature(data.main.temp_min);
+    const temperaturemax = convertTemperature(data.main.temp_max);
+    const feelsLike = convertTemperature(data.main.feels_like);
+    const humidity = data.main.humidity;
+    const windSpeed = data.wind.speed;
+    const windDirection = data.wind.deg;
+
+    // Create elements to display weather information
+    const cityElement = document.createElement("h1");
+    const img = document.createElement("img");
+    const temperatureElement = document.createElement("p");
+    const temperatureMinMaxElement = document.createElement("p");
+    const feelsLikeElement = document.createElement("p");
+    const humidityElement = document.createElement("p");
+    const windElement = document.createElement("p");
+
+    // Set the text content of the elements
+    cityElement.textContent = "Weather in " + city;
+    img.src = getIconSource(weatherIcon);
+    img.alt = data.weather[0].description;
+    temperatureElement.textContent = `Temperature: ${temperature}${temperatureUnitInUse}`;
+    temperatureMinMaxElement.textContent = `Min: ${temperaturemin}${temperatureUnitInUse}, Max: ${temperaturemax}${temperatureUnitInUse}`;
+    feelsLikeElement.textContent = `Feels like: ${feelsLike}${temperatureUnitInUse}`;
+    humidityElement.textContent = `Humidity: ${humidity}%`;
+    windElement.textContent = `Wind: ${windSpeed} m/s at ${windDirection}˚`;
+
+    // Append elements to the weather of the day div
+    weatherOfTheDay.appendChild(cityElement);
+    weatherOfTheDay.appendChild(img);
+    weatherOfTheDay.appendChild(temperatureElement);
+    weatherOfTheDay.appendChild(temperatureMinMaxElement);
+    weatherOfTheDay.appendChild(feelsLikeElement);
+    weatherOfTheDay.appendChild(humidityElement);
+    weatherOfTheDay.appendChild(windElement);
+}
+
+const getIconSource = (icon) => {
+    return `http://openweathermap.org/img/wn/${icon}.png`;
+}
+
+const convertTemperature = (temperature) => {
+    let convertedTemp;
+    if (temperatureUnitInUse === "°C") {
+        convertedTemp = temperature - 273.15;
+    } else {
+        convertedTemp = (temperature - 273.15) * 9 / 5 + 32;
+    }
+    return parseFloat(convertedTemp).toFixed(1);
 }
 
 locationSearch.addEventListener("input", getLocationInformation);
