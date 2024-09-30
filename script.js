@@ -1,5 +1,5 @@
 // Get API Keys from api_keys.js
-const openWeatherMapApiKey = apiKeys.OPEN_WEATHER_MAP_API_KEY;
+const openWeatherMapApiKey = apiKeys.OPEN_WEATHER_MAP;
 
 const locationSearch = document.getElementById("location-search");
 const searchResults = document.getElementById("location-list");
