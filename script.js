@@ -5,7 +5,9 @@ const locationSearch = document.getElementById("location-search");
 const searchResults = document.getElementById("location-list");
 const geolocation = document.getElementById("geolocation");
 const fahrenheitCelsius = document.getElementById("fahrenheit-celsius");
-const weatherOfTheDay = document.getElementById("weather-of-the-day");
+const currentWeather = document.getElementById("weather-currently");
+const body = document.querySelector("body");
+
 let temperatureUnitInUse = "°C";
 let latestWeatherData = null;
 
@@ -70,7 +72,7 @@ const temperatureToggle = () => {
 
 const showWeatherOfTheDay = (data) => {
     // Clear the weather of the day div
-    weatherOfTheDay.innerHTML = "";
+    currentWeather.innerHTML = "";
 
     // Get current weather information
     const city = data.name;
@@ -92,6 +94,24 @@ const showWeatherOfTheDay = (data) => {
     const humidityElement = document.createElement("p");
     const windElement = document.createElement("p");
 
+    // Set background color based on temperature
+    const kelvins = data.main.temp;
+    if (kelvins < 253.15) { // -20°C
+        body.style.backgroundColor = "purple";
+    } else if (kelvins < 263.15) { // -10°C
+        body.style.backgroundColor = "blue";
+    } else if (kelvins < 273.15) { // 0°C
+        body.style.backgroundColor = "cyan";
+    } else if (kelvins < 283.15) { // 10°C
+        body.style.backgroundColor = "lightblue";
+    } else if (kelvins < 293.15) { // 20°C
+        body.style.backgroundColor = "green";
+    } else if (kelvins < 303.15) { // 30°C
+        body.style.backgroundColor = "yellow";
+    } else { // 30°C+
+        body.style.backgroundColor = "red";
+    }
+
     // Set the text content of the elements
     cityElement.textContent = "Weather in " + city;
     img.src = getIconSource(weatherIcon);
@@ -103,13 +123,13 @@ const showWeatherOfTheDay = (data) => {
     windElement.textContent = `Wind: ${windSpeed} m/s at ${windDirection}˚`;
 
     // Append elements to the weather of the day div
-    weatherOfTheDay.appendChild(cityElement);
-    weatherOfTheDay.appendChild(img);
-    weatherOfTheDay.appendChild(temperatureElement);
-    weatherOfTheDay.appendChild(temperatureMinMaxElement);
-    weatherOfTheDay.appendChild(feelsLikeElement);
-    weatherOfTheDay.appendChild(humidityElement);
-    weatherOfTheDay.appendChild(windElement);
+    currentWeather.appendChild(cityElement);
+    currentWeather.appendChild(img);
+    currentWeather.appendChild(temperatureElement);
+    currentWeather.appendChild(temperatureMinMaxElement);
+    currentWeather.appendChild(feelsLikeElement);
+    currentWeather.appendChild(humidityElement);
+    currentWeather.appendChild(windElement);
 }
 
 const getIconSource = (icon) => {
