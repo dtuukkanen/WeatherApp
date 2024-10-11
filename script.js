@@ -6,20 +6,32 @@ const searchResults = document.getElementById("location-list");
 const geolocation = document.getElementById("geolocation");
 const fahrenheitCelsius = document.getElementById("fahrenheit-celsius");
 const currentWeather = document.getElementById("weather-currently");
+const weather5Days = document.getElementById("weather-5days");
 const body = document.querySelector("body");
 
 let temperatureUnitInUse = "°C";
-let latestWeatherData = null;
+let latestCurrentWeatherData = null;
+let latest5DayWeatherData = null;
 
-const getOpenWeatherMapData = async (latitude, longitude) => {
+const fetchCurrentWeather = async (latitude, longitude) => {
     const response = await fetch(
         "https://api.openweathermap.org/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&appid=" + openWeatherMapApiKey
     );
     const data = await response.json();
     console.log(data);
-    latestWeatherData = data;
+    latestCurrentWeatherData = data;
     showWeatherOfTheDay(data);
 };
+
+const fetch5DayWeather = async (latitude, longitude) => {
+    const response = await fetch(
+        "https://api.openweathermap.org/data/2.5/forecast?lat=" + latitude + "&lon=" + longitude + "&appid=" + openWeatherMapApiKey
+    );
+    const data = await response.json();
+    console.log(data);
+    latest5DayWeatherData = data;
+    showWeatherOf5Days(data);
+}
 
 getLocationInformation = async () => {
     const location = locationSearch.value;
@@ -48,7 +60,8 @@ const updateDropdown = (locations) => {
         li.textContent = `${location.name}, ${location.country}`;
         li.addEventListener("click", () => {
             locationSearch.value = `${location.name}, ${location.country}`;
-            getOpenWeatherMapData(location.lat, location.lon);
+            fetchCurrentWeather(location.lat, location.lon);
+            fetch5DayWeather(location.lat, location.lon);
             searchResults.classList.remove("show");
         });
         searchResults.appendChild(li);
@@ -58,15 +71,19 @@ const updateDropdown = (locations) => {
 
 const getGeolocation = () => {
     navigator.geolocation.getCurrentPosition((position) => {
-        getOpenWeatherMapData(position.coords.latitude, position.coords.longitude);
+        fetchCurrentWeather(position.coords.latitude, position.coords.longitude);
+        fetch5DayWeather(position.coords.latitude, position.coords.longitude);
     });
 }
 
 const temperatureToggle = () => {
     temperatureUnitInUse = temperatureUnitInUse === "°C" ? "°F" : "°C";
     fahrenheitCelsius.textContent = temperatureUnitInUse;
-    if (latestWeatherData) {
-        showWeatherOfTheDay(latestWeatherData);
+    if (latestCurrentWeatherData) {
+        showWeatherOfTheDay(latestCurrentWeatherData);
+    }
+    if (latest5DayWeatherData) {
+        showWeatherOf5Days(latest5DayWeatherData);
     }
 }
 
@@ -154,6 +171,93 @@ const showWeatherOfTheDay = (data) => {
     currentWeather.appendChild(feelsLikeElement);
     currentWeather.appendChild(humidityElement);
     currentWeather.appendChild(windElement);
+}
+
+const showWeatherOf5Days = (data) => {
+    // Clear the weather of the week div
+    weather5Days.innerHTML = "";
+
+    // Create a header for the weekly weather information
+    const header = document.createElement("h1");
+    header.textContent = "5 Day Forecast";
+    weather5Days.appendChild(header);
+
+    // Get weekly weather information
+    const weeklyWeather = data.list;
+    const weeklyWeatherByDay = {};
+
+    weeklyWeather.forEach((weather) => {
+        const date = new Date(weather.dt * 1000);
+        const day = date.toDateString().slice(0, 3);
+
+        if (!weeklyWeatherByDay[day]) {
+            weeklyWeatherByDay[day] = {
+                minTemp: weather.main.temp_min,
+                maxTemp: weather.main.temp_max,
+                weather: weather,
+                humidity: weather.main.humidity,
+                windSpeed: weather.wind.speed,
+                windDirection: weather.wind.deg,
+                icon: weather.weather[0].icon,
+                description: weather.weather[0].description
+            };
+        } else {
+            weeklyWeatherByDay[day].minTemp = Math.min(weeklyWeatherByDay[day].minTemp, weather.main.temp_min);
+            weeklyWeatherByDay[day].maxTemp = Math.max(weeklyWeatherByDay[day].maxTemp, weather.main.temp_max);
+        }
+    });
+
+    // Create a table to display weekly weather information
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const tbody = document.createElement("tbody");
+
+    // Create table headers
+    const headers = ["Day", "Icon", "Temperature", "Min/Max Temperature", "Humidity", "Wind"];
+    const headerRow = document.createElement("tr");
+    headers.forEach(headerText => {
+        const th = document.createElement("th");
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    // Create table rows for each day's weather
+    for (const day in weeklyWeatherByDay) {
+        const weather = weeklyWeatherByDay[day];
+        const row = document.createElement("tr");
+
+        const dayCell = document.createElement("td");
+        const iconCell = document.createElement("td");
+        const temperatureCell = document.createElement("td");
+        const temperatureMinMaxCell = document.createElement("td");
+        const humidityCell = document.createElement("td");
+        const windCell = document.createElement("td");
+
+        const img = document.createElement("img");
+        img.src = getIconSource(weather.icon);
+        img.alt = weather.description;
+
+        dayCell.textContent = day;
+        iconCell.appendChild(img);
+        temperatureCell.textContent = `${convertTemperature(weather.weather.main.temp)}${temperatureUnitInUse}`;
+        temperatureMinMaxCell.textContent = `Min: ${convertTemperature(weather.minTemp)}${temperatureUnitInUse}, Max: ${convertTemperature(weather.maxTemp)}${temperatureUnitInUse}`;
+        humidityCell.textContent = `${weather.humidity}%`;
+        windCell.textContent = `${weather.windSpeed} m/s at ${weather.windDirection}˚`;
+
+        row.appendChild(dayCell);
+        row.appendChild(iconCell);
+        row.appendChild(temperatureCell);
+        row.appendChild(temperatureMinMaxCell);
+        row.appendChild(humidityCell);
+        row.appendChild(windCell);
+
+        tbody.appendChild(row);
+    }
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    weather5Days.appendChild(table);
 }
 
 const getIconSource = (icon) => {
