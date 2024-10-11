@@ -33,7 +33,7 @@ const fetch5DayWeather = async (latitude, longitude) => {
     showWeatherOf5Days(data);
 }
 
-getLocationInformation = async () => {
+const getLocationInformation = async () => {
     const location = locationSearch.value;
     if (!location) {
         searchResults.innerHTML = "";
