@@ -11,7 +11,7 @@ const body = document.querySelector("body");
 let temperatureUnitInUse = "°C";
 let latestWeatherData = null;
 
-getOpenWeatherMapData = async (latitude, longitude) => {
+const getOpenWeatherMapData = async (latitude, longitude) => {
     const response = await fetch(
         "https://api.openweathermap.org/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&appid=" + openWeatherMapApiKey
     );
