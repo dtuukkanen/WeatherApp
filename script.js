@@ -12,6 +12,7 @@ const body = document.querySelector("body");
 let temperatureUnitInUse = "°C";
 let latestCurrentWeatherData = null;
 let latest5DayWeatherData = null;
+let favorites = [];
 
 const fetchCurrentWeather = async (latitude, longitude) => {
     const response = await fetch(
@@ -48,8 +49,60 @@ const getLocationInformation = async () => {
     updateDropdown(data);
 };
 
+const addFavorite = (location) => {
+    const favoriteIndex = favorites.findIndex(favorite => favorite.name === location.name && favorite.country === location.country);
+    if (favoriteIndex === -1) {
+        favorites.push(location);
+        console.log("Added to favorites:", location);
+    } else {
+        favorites.splice(favoriteIndex, 1);
+        console.log("Removed from favorites:", location);
+    }
+    localStorage.setItem("favorites", JSON.stringify(favorites));
+    updateDropdown([]); // Refresh the dropdown to show the updated favorites
+};
+
 const updateDropdown = (locations) => {
     searchResults.innerHTML = "";
+
+    // Add favorites to the dropdown
+    if (favorites.length > 0) {
+        const favoritesHeader = document.createElement("li");
+        favoritesHeader.classList.add('dropdown-header');
+        favoritesHeader.textContent = "Favorites";
+        searchResults.appendChild(favoritesHeader);
+
+        favorites.forEach((favorite) => {
+            const li = document.createElement("li");
+            li.classList.add('dropdown-item');
+            li.textContent = `${favorite.name}, ${favorite.country}`;
+            li.addEventListener("click", () => {
+                locationSearch.value = `${favorite.name}, ${favorite.country}`;
+                fetchCurrentWeather(favorite.lat, favorite.lon);
+                fetch5DayWeather(favorite.lat, favorite.lon);
+                searchResults.classList.remove("show");
+            });
+
+            // Add a button to remove from favorites
+            const unstarButton = document.createElement("button");
+            unstarButton.textContent = "☆";
+            unstarButton.style.marginLeft = "10px"; // Add some margin to separate the button from the text
+            unstarButton.addEventListener("click", (event) => {
+                event.stopPropagation(); // Stop the click event from propagating to the parent li
+                addFavorite(favorite); // This will remove the favorite
+            });
+            li.appendChild(unstarButton);
+    
+            searchResults.appendChild(li);
+        });
+
+
+        const divider = document.createElement("li");
+        divider.classList.add('dropdown-divider');
+        searchResults.appendChild(divider);
+    }
+
+    // Add search results to the dropdown
     if (!Array.isArray(locations) || locations.length === 0) {
         searchResults.classList.remove("show");
         return;
@@ -64,6 +117,19 @@ const updateDropdown = (locations) => {
             fetch5DayWeather(location.lat, location.lon);
             searchResults.classList.remove("show");
         });
+
+        // Add a button to add to favorites
+        const favoriteButton = document.createElement("button");
+        favoriteButton.textContent = "⭐️";
+        favoriteButton.style.marginLeft = "10px"; // Add some margin to separate the button from the text
+        favoriteButton.addEventListener("click", (event) => {
+            event.stopPropagation(); // Stop the click event from propagating to the parent li
+            console.log("Favorite button clicked for:", location);
+            addFavorite(location);
+            updateDropdown(locations); // Refresh the dropdown to show the updated favorites
+        });
+        li.appendChild(favoriteButton);
+
         searchResults.appendChild(li);
     });
     searchResults.classList.add("show");
@@ -282,6 +348,12 @@ function adjustBrightness(hex, factor) {
     return `rgb(${r}, ${g}, ${b})`;
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+    const storedFavorites = localStorage.getItem('favorites');
+    if (storedFavorites) {
+        favorites = JSON.parse(storedFavorites);
+    }
+});
 locationSearch.addEventListener("input", getLocationInformation);
 geolocation.addEventListener("click", getGeolocation);
 fahrenheitCelsius.addEventListener("click", temperatureToggle);
