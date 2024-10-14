@@ -6,11 +6,13 @@ const searchResults = document.getElementById("location-list");
 const geolocation = document.getElementById("geolocation");
 const fahrenheitCelsius = document.getElementById("fahrenheit-celsius");
 const currentWeather = document.getElementById("weather-currently");
+const weatherHourly = document.getElementById("weather-hourly");
 const weather5Days = document.getElementById("weather-5days");
 const body = document.querySelector("body");
 
 let temperatureUnitInUse = "°C";
 let latestCurrentWeatherData = null;
+let latest24HourWeatherData = null;
 let latest5DayWeatherData = null;
 let favorites = [];
 
@@ -23,6 +25,16 @@ const fetchCurrentWeather = async (latitude, longitude) => {
     latestCurrentWeatherData = data;
     showWeatherOfTheDay(data);
 };
+
+const fetch24HourWeather = async (latitude, longitude) => {
+    const response = await fetch(
+        "https://api.openweathermap.org/data/2.5/forecast?lat=" + latitude + "&lon=" + longitude + "&cnt=8&appid=" + openWeatherMapApiKey
+    );
+    const data = await response.json();
+    console.log(data);
+    latest24HourWeatherData = data;
+    showWeatherOf24Hours(data);
+}
 
 const fetch5DayWeather = async (latitude, longitude) => {
     const response = await fetch(
@@ -79,6 +91,7 @@ const updateDropdown = (locations) => {
             li.addEventListener("click", () => {
                 locationSearch.value = `${favorite.name}, ${favorite.country}`;
                 fetchCurrentWeather(favorite.lat, favorite.lon);
+                fetch24HourWeather(favorite.lat, favorite.lon);
                 fetch5DayWeather(favorite.lat, favorite.lon);
                 searchResults.classList.remove("show");
             });
@@ -114,6 +127,7 @@ const updateDropdown = (locations) => {
         li.addEventListener("click", () => {
             locationSearch.value = `${location.name}, ${location.country}`;
             fetchCurrentWeather(location.lat, location.lon);
+            fetch24HourWeather(location.lat, location.lon);
             fetch5DayWeather(location.lat, location.lon);
             searchResults.classList.remove("show");
         });
@@ -138,6 +152,7 @@ const updateDropdown = (locations) => {
 const getGeolocation = () => {
     navigator.geolocation.getCurrentPosition((position) => {
         fetchCurrentWeather(position.coords.latitude, position.coords.longitude);
+        fetch24HourWeather(position.coords.latitude, position.coords.longitude);
         fetch5DayWeather(position.coords.latitude, position.coords.longitude);
     });
 }
@@ -147,6 +162,9 @@ const temperatureToggle = () => {
     fahrenheitCelsius.textContent = temperatureUnitInUse;
     if (latestCurrentWeatherData) {
         showWeatherOfTheDay(latestCurrentWeatherData);
+    }
+    if (latest24HourWeatherData) {
+        showWeatherOf24Hours(latest24HourWeatherData);
     }
     if (latest5DayWeatherData) {
         showWeatherOf5Days(latest5DayWeatherData);
@@ -239,6 +257,82 @@ const showWeatherOfTheDay = (data) => {
     currentWeather.appendChild(windElement);
 }
 
+const showWeatherOf24Hours = (data) => {
+    // Clear the weather of the day div
+    weatherHourly.innerHTML = "";
+
+    // Create a header for the hourly weather information
+    const header = document.createElement("h1");
+    header.textContent = "24 Hour Forecast";
+    weatherHourly.appendChild(header);
+
+    // Create a table
+    const table = document.createElement("table");
+    table.classList.add("table", "table-striped");
+
+    // Create table header
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    const headers = ["Time", "Icon", "Temperature", "Feels Like", "Weather", "Humidity", "Wind Speed"];
+    headers.forEach(headerText => {
+        const th = document.createElement("th");
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Create table body
+    const tbody = document.createElement("tbody");
+    data.list.forEach(item => {
+        const row = document.createElement("tr");
+
+        // Time
+        const timeCell = document.createElement("td");
+        timeCell.textContent = new Date(item.dt * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        row.appendChild(timeCell);
+
+        // Icon
+        const iconCell = document.createElement("td");
+        const img = document.createElement("img");
+        img.src = getIconSource(item.weather[0].icon);
+        img.alt = item.weather[0].description;
+        iconCell.appendChild(img);
+        row.appendChild(iconCell);
+
+        // Temperature
+        const tempCell = document.createElement("td");
+        tempCell.textContent = convertTemperature(item.main.temp) + temperatureUnitInUse;
+        row.appendChild(tempCell);
+
+        // Feels Like
+        const feelsLikeCell = document.createElement("td");
+        feelsLikeCell.textContent = convertTemperature(item.main.feels_like) + temperatureUnitInUse;
+        row.appendChild(feelsLikeCell);
+
+        // Weather
+        const weatherCell = document.createElement("td");
+        weatherCell.textContent = item.weather[0].description;
+        row.appendChild(weatherCell);
+
+        // Humidity
+        const humidityCell = document.createElement("td");
+        humidityCell.textContent = item.main.humidity + " %";
+        row.appendChild(humidityCell);
+
+        // Wind Speed
+        const windSpeedCell = document.createElement("td");
+        windSpeedCell.textContent = item.wind.speed + " m/s at " + item.wind.deg + "°";
+        row.appendChild(windSpeedCell);
+
+        tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+
+    // Append the table to the weatherHourly div
+    weatherHourly.appendChild(table);
+}
+
 const showWeatherOf5Days = (data) => {
     // Clear the weather of the week div
     weather5Days.innerHTML = "";
@@ -275,6 +369,9 @@ const showWeatherOf5Days = (data) => {
 
     // Create a table to display weekly weather information
     const table = document.createElement("table");
+    table.classList.add("table", "table-striped");
+
+    // Create table header and body
     const thead = document.createElement("thead");
     const tbody = document.createElement("tbody");
 
