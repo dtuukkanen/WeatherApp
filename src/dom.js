@@ -1,175 +1,8 @@
-// Get API Keys from api_keys.js
-const openWeatherMapApiKey = apiKeys.OPEN_WEATHER_MAP;
-
-const locationSearch = document.getElementById("location-search");
-const searchResults = document.getElementById("location-list");
-const geolocation = document.getElementById("geolocation");
-const fahrenheitCelsius = document.getElementById("fahrenheit-celsius");
 const currentWeather = document.getElementById("weather-currently");
 const weatherHourly = document.getElementById("weather-hourly");
 const weather5Days = document.getElementById("weather-5days");
+const searchResults = document.getElementById("location-list");
 const body = document.querySelector("body");
-
-let temperatureUnitInUse = "°C";
-let latestCurrentWeatherData = null;
-let latest24HourWeatherData = null;
-let latest5DayWeatherData = null;
-let favorites = [];
-
-const fetchCurrentWeather = async (latitude, longitude) => {
-    const response = await fetch(
-        "https://api.openweathermap.org/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&appid=" + openWeatherMapApiKey
-    );
-    const data = await response.json();
-    //console.log(data);
-    latestCurrentWeatherData = data;
-    showWeatherOfTheDay(data);
-};
-
-const fetch24HourWeather = async (latitude, longitude) => {
-    const response = await fetch(
-        "https://api.openweathermap.org/data/2.5/forecast?lat=" + latitude + "&lon=" + longitude + "&cnt=8&appid=" + openWeatherMapApiKey
-    );
-    const data = await response.json();
-    //console.log(data);
-    latest24HourWeatherData = data;
-    showWeatherOf24Hours(data);
-}
-
-const fetch5DayWeather = async (latitude, longitude) => {
-    const response = await fetch(
-        "https://api.openweathermap.org/data/2.5/forecast?lat=" + latitude + "&lon=" + longitude + "&appid=" + openWeatherMapApiKey
-    );
-    const data = await response.json();
-    //console.log(data);
-    latest5DayWeatherData = data;
-    showWeatherOf5Days(data);
-}
-
-const getLocationInformation = async () => {
-    const location = locationSearch.value;
-    if (!location) {
-        searchResults.innerHTML = "";
-        searchResults.classList.remove("show");
-        return;
-    }
-    const response = await fetch(
-        "https://api.openweathermap.org/geo/1.0/direct?q=" + location + "&limit=5&appid=" + openWeatherMapApiKey
-    );
-    const data = await response.json();
-    //console.log(data);
-    updateDropdown(data);
-};
-
-const addFavorite = (location) => {
-    const favoriteIndex = favorites.findIndex(favorite => favorite.name === location.name && favorite.country === location.country);
-    if (favoriteIndex === -1) {
-        favorites.push(location);
-        //console.log("Added to favorites:", location);
-    } else {
-        favorites.splice(favoriteIndex, 1);
-        //console.log("Removed from favorites:", location);
-    }
-    localStorage.setItem("favorites", JSON.stringify(favorites));
-    updateDropdown([]); // Refresh the dropdown to show the updated favorites
-};
-
-const updateDropdown = (locations) => {
-    searchResults.innerHTML = "";
-
-    // Add favorites to the dropdown
-    if (favorites.length > 0) {
-        const favoritesHeader = document.createElement("li");
-        favoritesHeader.classList.add('dropdown-header');
-        favoritesHeader.textContent = "Favorites";
-        searchResults.appendChild(favoritesHeader);
-
-        favorites.forEach((favorite) => {
-            const li = document.createElement("li");
-            li.classList.add('dropdown-item');
-            li.textContent = `${favorite.name}, ${favorite.country}`;
-            li.addEventListener("click", () => {
-                locationSearch.value = `${favorite.name}, ${favorite.country}`;
-                fetchCurrentWeather(favorite.lat, favorite.lon);
-                fetch24HourWeather(favorite.lat, favorite.lon);
-                fetch5DayWeather(favorite.lat, favorite.lon);
-                searchResults.classList.remove("show");
-            });
-
-            // Add a button to remove from favorites
-            const unstarButton = document.createElement("button");
-            unstarButton.textContent = "☆";
-            unstarButton.style.marginLeft = "10px"; // Add some margin to separate the button from the text
-            unstarButton.addEventListener("click", (event) => {
-                event.stopPropagation(); // Stop the click event from propagating to the parent li
-                addFavorite(favorite); // This will remove the favorite
-            });
-            li.appendChild(unstarButton);
-    
-            searchResults.appendChild(li);
-        });
-
-
-        const divider = document.createElement("li");
-        divider.classList.add('dropdown-divider');
-        searchResults.appendChild(divider);
-    }
-
-    // Add search results to the dropdown
-    if (!Array.isArray(locations) || locations.length === 0) {
-        searchResults.classList.remove("show");
-        return;
-    }
-    locations.forEach((location) => {
-        const li = document.createElement("li");
-        li.classList.add('dropdown-item');
-        li.textContent = `${location.name}, ${location.country}`;
-        li.addEventListener("click", () => {
-            locationSearch.value = `${location.name}, ${location.country}`;
-            fetchCurrentWeather(location.lat, location.lon);
-            fetch24HourWeather(location.lat, location.lon);
-            fetch5DayWeather(location.lat, location.lon);
-            searchResults.classList.remove("show");
-        });
-
-        // Add a button to add to favorites
-        const favoriteButton = document.createElement("button");
-        favoriteButton.textContent = "⭐️";
-        favoriteButton.style.marginLeft = "10px"; // Add some margin to separate the button from the text
-        favoriteButton.addEventListener("click", (event) => {
-            event.stopPropagation(); // Stop the click event from propagating to the parent li
-            // console.log("Favorite button clicked for:", location);
-            addFavorite(location);
-            updateDropdown(locations); // Refresh the dropdown to show the updated favorites
-        });
-        li.appendChild(favoriteButton);
-
-        searchResults.appendChild(li);
-    });
-    searchResults.classList.add("show");
-};
-
-const getGeolocation = () => {
-    navigator.geolocation.getCurrentPosition((position) => {
-        fetchCurrentWeather(position.coords.latitude, position.coords.longitude);
-        fetch24HourWeather(position.coords.latitude, position.coords.longitude);
-        fetch5DayWeather(position.coords.latitude, position.coords.longitude);
-    });
-}
-
-const temperatureToggle = () => {
-    temperatureUnitInUse = temperatureUnitInUse === "°C" ? "°F" : "°C";
-    fahrenheitCelsius.textContent = temperatureUnitInUse;
-    if (latestCurrentWeatherData) {
-        showWeatherOfTheDay(latestCurrentWeatherData);
-    }
-    if (latest24HourWeatherData) {
-        showWeatherOf24Hours(latest24HourWeatherData);
-    }
-    if (latest5DayWeatherData) {
-        showWeatherOf5Days(latest5DayWeatherData);
-    }
-}
 
 const showWeatherOfTheDay = (data) => {
     // Clear the weather of the day div
@@ -246,7 +79,7 @@ const showWeatherOfTheDay = (data) => {
     currentWeather.appendChild(feelsLikeElement);
     currentWeather.appendChild(humidityElement);
     currentWeather.appendChild(windElement);
-}
+};
 
 const showWeatherOf24Hours = (data) => {
     // Clear the weather of the day div
@@ -324,7 +157,7 @@ const showWeatherOf24Hours = (data) => {
 
     // Append the table to the weatherHourly div
     weatherHourly.appendChild(table);
-}
+};
 
 const showWeatherOf5Days = (data) => {
     // Clear the weather of the week div
@@ -425,36 +258,87 @@ const showWeatherOf5Days = (data) => {
     table.appendChild(thead);
     table.appendChild(tbody);
     weather5Days.appendChild(table);
-}
+};
 
-const getIconSource = (icon) => {
-    return `https://openweathermap.org/img/wn/${icon}.png`;
-}
+const updateDropdown = (locations) => {
+    searchResults.innerHTML = "";
 
-const convertTemperature = (temperature) => {
-    let convertedTemp;
-    if (temperatureUnitInUse === "°C") {
-        convertedTemp = temperature - 273.15;
-    } else {
-        convertedTemp = (temperature - 273.15) * 9 / 5 + 32;
+    // Add favorites to the dropdown
+    if (favorites.length > 0) {
+        const favoritesHeader = document.createElement("li");
+        favoritesHeader.classList.add('dropdown-header');
+        favoritesHeader.textContent = "Favorites";
+        searchResults.appendChild(favoritesHeader);
+
+        favorites.forEach((favorite) => {
+            const li = document.createElement("li");
+            li.classList.add('dropdown-item');
+            li.textContent = `${favorite.name}, ${favorite.country}`;
+            li.addEventListener("click", () => {
+                locationSearch.value = `${favorite.name}, ${favorite.country}`;
+                fetchCurrentWeather(favorite.lat, favorite.lon);
+                fetch24HourWeather(favorite.lat, favorite.lon);
+                fetch5DayWeather(favorite.lat, favorite.lon);
+                searchResults.classList.remove("show");
+            });
+
+            // Add a button to remove from favorites
+            const unstarButton = document.createElement("button");
+            unstarButton.textContent = "☆";
+            unstarButton.style.marginLeft = "10px"; // Add some margin to separate the button from the text
+            unstarButton.addEventListener("click", (event) => {
+                event.stopPropagation(); // Stop the click event from propagating to the parent li
+                addFavorite(favorite); // This will remove the favorite
+            });
+            li.appendChild(unstarButton);
+    
+            searchResults.appendChild(li);
+        });
+
+
+        const divider = document.createElement("li");
+        divider.classList.add('dropdown-divider');
+        searchResults.appendChild(divider);
     }
-    return parseFloat(convertedTemp).toFixed(1);
-}
 
-// Function to adjust brightness of a hex color
-function adjustBrightness(hex, factor) {
-    const r = Math.max(0, Math.min(255, Math.floor(parseInt(hex.slice(1, 3), 16) * factor)));
-    const g = Math.max(0, Math.min(255, Math.floor(parseInt(hex.slice(3, 5), 16) * factor)));
-    const b = Math.max(0, Math.min(255, Math.floor(parseInt(hex.slice(5, 7), 16) * factor)));
-    return `rgb(${r}, ${g}, ${b})`;
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    const storedFavorites = localStorage.getItem('favorites');
-    if (storedFavorites) {
-        favorites = JSON.parse(storedFavorites);
+    // Add search results to the dropdown
+    if (!Array.isArray(locations) || locations.length === 0) {
+        searchResults.classList.remove("show");
+        return;
     }
-});
-locationSearch.addEventListener("input", getLocationInformation);
-geolocation.addEventListener("click", getGeolocation);
-fahrenheitCelsius.addEventListener("click", temperatureToggle);
+    locations.forEach((location) => {
+        const li = document.createElement("li");
+        li.classList.add('dropdown-item');
+        li.textContent = `${location.name}, ${location.country}`;
+        li.addEventListener("click", () => {
+            locationSearch.value = `${location.name}, ${location.country}`;
+            fetchCurrentWeather(location.lat, location.lon);
+            fetch24HourWeather(location.lat, location.lon);
+            fetch5DayWeather(location.lat, location.lon);
+            searchResults.classList.remove("show");
+        });
+
+        // Add a button to add to favorites
+        const favoriteButton = document.createElement("button");
+        favoriteButton.textContent = "⭐️";
+        favoriteButton.style.marginLeft = "10px"; // Add some margin to separate the button from the text
+        favoriteButton.addEventListener("click", (event) => {
+            event.stopPropagation(); // Stop the click event from propagating to the parent li
+            // console.log("Favorite button clicked for:", location);
+            addFavorite(location);
+            updateDropdown(locations); // Refresh the dropdown to show the updated favorites
+        });
+        li.appendChild(favoriteButton);
+
+        searchResults.appendChild(li);
+    });
+    searchResults.classList.add("show");
+};
+
+const getGeolocation = () => {
+    navigator.geolocation.getCurrentPosition((position) => {
+        fetchCurrentWeather(position.coords.latitude, position.coords.longitude);
+        fetch24HourWeather(position.coords.latitude, position.coords.longitude);
+        fetch5DayWeather(position.coords.latitude, position.coords.longitude);
+    });
+};
