@@ -42,7 +42,7 @@ const getLocationInformation = async () => {
         return;
     }
     const response = await fetch(
-        "http://api.openweathermap.org/geo/1.0/direct?q=" + location + "&limit=5&appid=" + openWeatherMapApiKey
+        "https://api.openweathermap.org/geo/1.0/direct?q=" + location + "&limit=5&appid=" + openWeatherMapApiKey
     );
     const data = await response.json();
     console.log(data);
@@ -327,7 +327,7 @@ const showWeatherOf5Days = (data) => {
 }
 
 const getIconSource = (icon) => {
-    return `http://openweathermap.org/img/wn/${icon}.png`;
+    return `https://openweathermap.org/img/wn/${icon}.png`;
 }
 
 const convertTemperature = (temperature) => {
