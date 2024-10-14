@@ -10,37 +10,41 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style.css">
     <script src="api_keys.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 
 <body>
-    <div class="row">
-        <!-- Search button -->
-        <div class="col">
-            <div class="dropdown">
-                <input type="text" id="location-search" placeholder="Search location" class="form-control">
-                <ul class="dropdown-menu" id="location-list"></ul>
+    <div class="container">
+        <div class="row g-2">
+            <!-- Search button -->
+            <div class="col-12 col-md-4">
+                <div class="dropdown">
+                    <input type="text" id="location-search" placeholder="Search location" class="form-control">
+                    <ul class="dropdown-menu" id="location-list"></ul>
+                </div>
+            </div>
+
+            <!-- Geolocation button -->
+            <div class="col-12 col-md-4">
+                <button id="geolocation" class="btn btn-primary w-100">Use my location
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                        class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Celsius or Fahrenheit -->
+            <div class="col-12 col-md-4">
+                <button type="button" id="fahrenheit-celsius" class="btn btn-primary w-100" data-toggle="button" aria-pressed="false" autocomplete="off">
+                    ˚C
+                </button>
             </div>
         </div>
-
-        <!-- Geolocation button -->
-        <div class="col">
-            <button id="geolocation" class="btn btn-primary">Use my location
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                    class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                </svg>
-            </button>
-        </div>
-
-        <!-- Celsius or Fahrenheit -->
-        <div class="col">
-            <button type="button" id="fahrenheit-celsius" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">
-                ˚C
-            </button>
-        </div>
+        <div id="weather-currently" class="mt-3"></div>
+        <div id="weather-5days" class="mt-3"></div>
     </div>
-    <div id="weather-of-the-day"></div>
 </body>
 </html>

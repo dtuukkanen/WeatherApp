@@ -1,0 +1,18 @@
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #f9f9f9; /* Change to your desired background color */
+}
+
+table, th, td {
+  border: 1px solid #ddd; /* Add gridlines */
+}
+
+th, td {
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2; /* Different background color for header */
+}

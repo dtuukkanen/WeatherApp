@@ -5,21 +5,36 @@ const locationSearch = document.getElementById("location-search");
 const searchResults = document.getElementById("location-list");
 const geolocation = document.getElementById("geolocation");
 const fahrenheitCelsius = document.getElementById("fahrenheit-celsius");
-const weatherOfTheDay = document.getElementById("weather-of-the-day");
-let temperatureUnitInUse = "°C";
-let latestWeatherData = null;
+const currentWeather = document.getElementById("weather-currently");
+const weather5Days = document.getElementById("weather-5days");
+const body = document.querySelector("body");
 
-getOpenWeatherMapData = async (latitude, longitude) => {
+let temperatureUnitInUse = "°C";
+let latestCurrentWeatherData = null;
+let latest5DayWeatherData = null;
+let favorites = [];
+
+const fetchCurrentWeather = async (latitude, longitude) => {
     const response = await fetch(
         "https://api.openweathermap.org/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&appid=" + openWeatherMapApiKey
     );
     const data = await response.json();
     console.log(data);
-    latestWeatherData = data;
+    latestCurrentWeatherData = data;
     showWeatherOfTheDay(data);
 };
 
-getLocationInformation = async () => {
+const fetch5DayWeather = async (latitude, longitude) => {
+    const response = await fetch(
+        "https://api.openweathermap.org/data/2.5/forecast?lat=" + latitude + "&lon=" + longitude + "&appid=" + openWeatherMapApiKey
+    );
+    const data = await response.json();
+    console.log(data);
+    latest5DayWeatherData = data;
+    showWeatherOf5Days(data);
+}
+
+const getLocationInformation = async () => {
     const location = locationSearch.value;
     if (!location) {
         searchResults.innerHTML = "";
@@ -34,8 +49,60 @@ getLocationInformation = async () => {
     updateDropdown(data);
 };
 
+const addFavorite = (location) => {
+    const favoriteIndex = favorites.findIndex(favorite => favorite.name === location.name && favorite.country === location.country);
+    if (favoriteIndex === -1) {
+        favorites.push(location);
+        console.log("Added to favorites:", location);
+    } else {
+        favorites.splice(favoriteIndex, 1);
+        console.log("Removed from favorites:", location);
+    }
+    localStorage.setItem("favorites", JSON.stringify(favorites));
+    updateDropdown([]); // Refresh the dropdown to show the updated favorites
+};
+
 const updateDropdown = (locations) => {
     searchResults.innerHTML = "";
+
+    // Add favorites to the dropdown
+    if (favorites.length > 0) {
+        const favoritesHeader = document.createElement("li");
+        favoritesHeader.classList.add('dropdown-header');
+        favoritesHeader.textContent = "Favorites";
+        searchResults.appendChild(favoritesHeader);
+
+        favorites.forEach((favorite) => {
+            const li = document.createElement("li");
+            li.classList.add('dropdown-item');
+            li.textContent = `${favorite.name}, ${favorite.country}`;
+            li.addEventListener("click", () => {
+                locationSearch.value = `${favorite.name}, ${favorite.country}`;
+                fetchCurrentWeather(favorite.lat, favorite.lon);
+                fetch5DayWeather(favorite.lat, favorite.lon);
+                searchResults.classList.remove("show");
+            });
+
+            // Add a button to remove from favorites
+            const unstarButton = document.createElement("button");
+            unstarButton.textContent = "☆";
+            unstarButton.style.marginLeft = "10px"; // Add some margin to separate the button from the text
+            unstarButton.addEventListener("click", (event) => {
+                event.stopPropagation(); // Stop the click event from propagating to the parent li
+                addFavorite(favorite); // This will remove the favorite
+            });
+            li.appendChild(unstarButton);
+    
+            searchResults.appendChild(li);
+        });
+
+
+        const divider = document.createElement("li");
+        divider.classList.add('dropdown-divider');
+        searchResults.appendChild(divider);
+    }
+
+    // Add search results to the dropdown
     if (!Array.isArray(locations) || locations.length === 0) {
         searchResults.classList.remove("show");
         return;
@@ -46,9 +113,23 @@ const updateDropdown = (locations) => {
         li.textContent = `${location.name}, ${location.country}`;
         li.addEventListener("click", () => {
             locationSearch.value = `${location.name}, ${location.country}`;
-            getOpenWeatherMapData(location.lat, location.lon);
+            fetchCurrentWeather(location.lat, location.lon);
+            fetch5DayWeather(location.lat, location.lon);
             searchResults.classList.remove("show");
         });
+
+        // Add a button to add to favorites
+        const favoriteButton = document.createElement("button");
+        favoriteButton.textContent = "⭐️";
+        favoriteButton.style.marginLeft = "10px"; // Add some margin to separate the button from the text
+        favoriteButton.addEventListener("click", (event) => {
+            event.stopPropagation(); // Stop the click event from propagating to the parent li
+            console.log("Favorite button clicked for:", location);
+            addFavorite(location);
+            updateDropdown(locations); // Refresh the dropdown to show the updated favorites
+        });
+        li.appendChild(favoriteButton);
+
         searchResults.appendChild(li);
     });
     searchResults.classList.add("show");
@@ -56,25 +137,30 @@ const updateDropdown = (locations) => {
 
 const getGeolocation = () => {
     navigator.geolocation.getCurrentPosition((position) => {
-        getOpenWeatherMapData(position.coords.latitude, position.coords.longitude);
+        fetchCurrentWeather(position.coords.latitude, position.coords.longitude);
+        fetch5DayWeather(position.coords.latitude, position.coords.longitude);
     });
 }
 
 const temperatureToggle = () => {
     temperatureUnitInUse = temperatureUnitInUse === "°C" ? "°F" : "°C";
     fahrenheitCelsius.textContent = temperatureUnitInUse;
-    if (latestWeatherData) {
-        showWeatherOfTheDay(latestWeatherData);
+    if (latestCurrentWeatherData) {
+        showWeatherOfTheDay(latestCurrentWeatherData);
+    }
+    if (latest5DayWeatherData) {
+        showWeatherOf5Days(latest5DayWeatherData);
     }
 }
 
 const showWeatherOfTheDay = (data) => {
     // Clear the weather of the day div
-    weatherOfTheDay.innerHTML = "";
+    currentWeather.innerHTML = "";
 
     // Get current weather information
     const city = data.name;
     const weatherIcon = data.weather[0].icon;
+    const kelvins = data.main.temp;
     const temperature = convertTemperature(data.main.temp);
     const temperaturemin = convertTemperature(data.main.temp_min);
     const temperaturemax = convertTemperature(data.main.temp_max);
@@ -82,6 +168,14 @@ const showWeatherOfTheDay = (data) => {
     const humidity = data.main.humidity;
     const windSpeed = data.wind.speed;
     const windDirection = data.wind.deg;
+    const sunrise = new Date(data.sys.sunrise * 1000);
+    const sunset = new Date(data.sys.sunset * 1000);
+    const currentTime = new Date();
+
+    // Log the times for debugging
+    console.log("Current Time:", currentTime);
+    console.log("Sunrise:", sunrise);
+    console.log("Sunset:", sunset);
 
     // Create elements to display weather information
     const cityElement = document.createElement("h1");
@@ -91,6 +185,39 @@ const showWeatherOfTheDay = (data) => {
     const feelsLikeElement = document.createElement("p");
     const humidityElement = document.createElement("p");
     const windElement = document.createElement("p");
+
+    console.log(currentTime);
+
+    // Set background color based on temperature
+    let backgroundColor;
+    if (kelvins < 253.15) { // -20°C
+        backgroundColor = "#800080"; // purple
+    } else if (kelvins < 263.15) { // -10°C
+        backgroundColor = "#0000FF"; // blue
+    } else if (kelvins < 273.15) { // 0°C
+        backgroundColor = "#00FFFF"; // cyan
+    } else if (kelvins < 283.15) { // 10°C
+        backgroundColor = "#ADD8E6"; // lightblue
+    } else if (kelvins < 293.15) { // 20°C
+        backgroundColor = "#008000"; // green
+    } else if (kelvins < 303.15) { // 30°C
+        backgroundColor = "#FFFF00"; // yellow
+    } else { // 30°C+
+        backgroundColor = "#FF0000"; // red
+    }
+
+    // Set background color based on time of day
+    const isNight = currentTime < sunrise || currentTime > sunset;
+    console.log("Is it night?", isNight);
+
+    if (isNight) {
+        // Apply a dimming effect by adjusting the alpha channel
+        body.style.backgroundColor = adjustBrightness(backgroundColor, 0.3);
+        body.style.color = "white"; // Set text color to white for better contrast
+    } else {
+        body.style.backgroundColor = backgroundColor;
+        body.style.color = "black"; // Set text color to black for better contrast
+    }
 
     // Set the text content of the elements
     cityElement.textContent = "Weather in " + city;
@@ -103,13 +230,100 @@ const showWeatherOfTheDay = (data) => {
     windElement.textContent = `Wind: ${windSpeed} m/s at ${windDirection}˚`;
 
     // Append elements to the weather of the day div
-    weatherOfTheDay.appendChild(cityElement);
-    weatherOfTheDay.appendChild(img);
-    weatherOfTheDay.appendChild(temperatureElement);
-    weatherOfTheDay.appendChild(temperatureMinMaxElement);
-    weatherOfTheDay.appendChild(feelsLikeElement);
-    weatherOfTheDay.appendChild(humidityElement);
-    weatherOfTheDay.appendChild(windElement);
+    currentWeather.appendChild(cityElement);
+    currentWeather.appendChild(img);
+    currentWeather.appendChild(temperatureElement);
+    currentWeather.appendChild(temperatureMinMaxElement);
+    currentWeather.appendChild(feelsLikeElement);
+    currentWeather.appendChild(humidityElement);
+    currentWeather.appendChild(windElement);
+}
+
+const showWeatherOf5Days = (data) => {
+    // Clear the weather of the week div
+    weather5Days.innerHTML = "";
+
+    // Create a header for the weekly weather information
+    const header = document.createElement("h1");
+    header.textContent = "5 Day Forecast";
+    weather5Days.appendChild(header);
+
+    // Get weekly weather information
+    const weeklyWeather = data.list;
+    const weeklyWeatherByDay = {};
+
+    weeklyWeather.forEach((weather) => {
+        const date = new Date(weather.dt * 1000);
+        const day = date.toDateString().slice(0, 3);
+
+        if (!weeklyWeatherByDay[day]) {
+            weeklyWeatherByDay[day] = {
+                minTemp: weather.main.temp_min,
+                maxTemp: weather.main.temp_max,
+                weather: weather,
+                humidity: weather.main.humidity,
+                windSpeed: weather.wind.speed,
+                windDirection: weather.wind.deg,
+                icon: weather.weather[0].icon,
+                description: weather.weather[0].description
+            };
+        } else {
+            weeklyWeatherByDay[day].minTemp = Math.min(weeklyWeatherByDay[day].minTemp, weather.main.temp_min);
+            weeklyWeatherByDay[day].maxTemp = Math.max(weeklyWeatherByDay[day].maxTemp, weather.main.temp_max);
+        }
+    });
+
+    // Create a table to display weekly weather information
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const tbody = document.createElement("tbody");
+
+    // Create table headers
+    const headers = ["Day", "Icon", "Temperature", "Min/Max Temperature", "Humidity", "Wind"];
+    const headerRow = document.createElement("tr");
+    headers.forEach(headerText => {
+        const th = document.createElement("th");
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    // Create table rows for each day's weather
+    for (const day in weeklyWeatherByDay) {
+        const weather = weeklyWeatherByDay[day];
+        const row = document.createElement("tr");
+
+        const dayCell = document.createElement("td");
+        const iconCell = document.createElement("td");
+        const temperatureCell = document.createElement("td");
+        const temperatureMinMaxCell = document.createElement("td");
+        const humidityCell = document.createElement("td");
+        const windCell = document.createElement("td");
+
+        const img = document.createElement("img");
+        img.src = getIconSource(weather.icon);
+        img.alt = weather.description;
+
+        dayCell.textContent = day;
+        iconCell.appendChild(img);
+        temperatureCell.textContent = `${convertTemperature(weather.weather.main.temp)}${temperatureUnitInUse}`;
+        temperatureMinMaxCell.textContent = `Min: ${convertTemperature(weather.minTemp)}${temperatureUnitInUse}, Max: ${convertTemperature(weather.maxTemp)}${temperatureUnitInUse}`;
+        humidityCell.textContent = `${weather.humidity}%`;
+        windCell.textContent = `${weather.windSpeed} m/s at ${weather.windDirection}˚`;
+
+        row.appendChild(dayCell);
+        row.appendChild(iconCell);
+        row.appendChild(temperatureCell);
+        row.appendChild(temperatureMinMaxCell);
+        row.appendChild(humidityCell);
+        row.appendChild(windCell);
+
+        tbody.appendChild(row);
+    }
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    weather5Days.appendChild(table);
 }
 
 const getIconSource = (icon) => {
@@ -126,6 +340,20 @@ const convertTemperature = (temperature) => {
     return parseFloat(convertedTemp).toFixed(1);
 }
 
+// Function to adjust brightness of a hex color
+function adjustBrightness(hex, factor) {
+    const r = Math.max(0, Math.min(255, Math.floor(parseInt(hex.slice(1, 3), 16) * factor)));
+    const g = Math.max(0, Math.min(255, Math.floor(parseInt(hex.slice(3, 5), 16) * factor)));
+    const b = Math.max(0, Math.min(255, Math.floor(parseInt(hex.slice(5, 7), 16) * factor)));
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const storedFavorites = localStorage.getItem('favorites');
+    if (storedFavorites) {
+        favorites = JSON.parse(storedFavorites);
+    }
+});
 locationSearch.addEventListener("input", getLocationInformation);
 geolocation.addEventListener("click", getGeolocation);
 fahrenheitCelsius.addEventListener("click", temperatureToggle);
