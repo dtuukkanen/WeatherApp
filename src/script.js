@@ -340,6 +340,7 @@ const showWeatherOf5Days = (data) => {
     weeklyWeather.forEach((weather) => {
         const date = new Date(weather.dt * 1000);
         const day = date.toDateString().slice(0, 3);
+        const hour = date.getHours();
 
         if (!weeklyWeatherByDay[day]) {
             weeklyWeatherByDay[day] = {
@@ -349,24 +350,25 @@ const showWeatherOf5Days = (data) => {
                 humidity: weather.main.humidity,
                 windSpeed: weather.wind.speed,
                 windDirection: weather.wind.deg,
-                icon: hour === 12 ? weather.weather[0].icon : weather.weather[0].icon,
-                description: hour === 12 ? weather.weather[0].description : weather.weather[0].description,
-                middayWeather: hour === 12 ? weather : null
+                icon: null,
+                description: null,
+                middayWeather: null
             };
         } else {
             weeklyWeatherByDay[day].minTemp = Math.min(weeklyWeatherByDay[day].minTemp, weather.main.temp_min);
             weeklyWeatherByDay[day].maxTemp = Math.max(weeklyWeatherByDay[day].maxTemp, weather.main.temp_max);
-            if (hour === 12) {
-                weeklyWeatherByDay[day].middayWeather = weather;
-                weeklyWeatherByDay[day].icon = weather.weather[0].icon;
-                weeklyWeatherByDay[day].description = weather.weather[0].description;
-            }
+        }
+
+        if (hour === 12 || !weeklyWeatherByDay[day].icon) {
+            weeklyWeatherByDay[day].icon = weather.weather[0].icon;
+            weeklyWeatherByDay[day].description = weather.weather[0].description;
+            weeklyWeatherByDay[day].middayWeather = weather;
         }
     });
 
     // Create a table to display weekly weather information
     const table = document.createElement("table");
-    table.classList.add("table", "table-striped");
+    table.classList.add("table", "table-striped", "table-bordered");
 
     // Create table header and body
     const thead = document.createElement("thead");
