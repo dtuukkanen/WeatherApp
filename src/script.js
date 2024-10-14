@@ -349,12 +349,18 @@ const showWeatherOf5Days = (data) => {
                 humidity: weather.main.humidity,
                 windSpeed: weather.wind.speed,
                 windDirection: weather.wind.deg,
-                icon: weather.weather[0].icon,
-                description: weather.weather[0].description
+                icon: hour === 12 ? weather.weather[0].icon : weather.weather[0].icon,
+                description: hour === 12 ? weather.weather[0].description : weather.weather[0].description,
+                middayWeather: hour === 12 ? weather : null
             };
         } else {
             weeklyWeatherByDay[day].minTemp = Math.min(weeklyWeatherByDay[day].minTemp, weather.main.temp_min);
             weeklyWeatherByDay[day].maxTemp = Math.max(weeklyWeatherByDay[day].maxTemp, weather.main.temp_max);
+            if (hour === 12) {
+                weeklyWeatherByDay[day].middayWeather = weather;
+                weeklyWeatherByDay[day].icon = weather.weather[0].icon;
+                weeklyWeatherByDay[day].description = weather.weather[0].description;
+            }
         }
     });
 
