@@ -21,7 +21,7 @@ const fetchCurrentWeather = async (latitude, longitude) => {
         "https://api.openweathermap.org/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&appid=" + openWeatherMapApiKey
     );
     const data = await response.json();
-    console.log(data);
+    //console.log(data);
     latestCurrentWeatherData = data;
     showWeatherOfTheDay(data);
 };
@@ -31,7 +31,7 @@ const fetch24HourWeather = async (latitude, longitude) => {
         "https://api.openweathermap.org/data/2.5/forecast?lat=" + latitude + "&lon=" + longitude + "&cnt=8&appid=" + openWeatherMapApiKey
     );
     const data = await response.json();
-    console.log(data);
+    //console.log(data);
     latest24HourWeatherData = data;
     showWeatherOf24Hours(data);
 }
@@ -41,7 +41,7 @@ const fetch5DayWeather = async (latitude, longitude) => {
         "https://api.openweathermap.org/data/2.5/forecast?lat=" + latitude + "&lon=" + longitude + "&appid=" + openWeatherMapApiKey
     );
     const data = await response.json();
-    console.log(data);
+    //console.log(data);
     latest5DayWeatherData = data;
     showWeatherOf5Days(data);
 }
@@ -57,7 +57,7 @@ const getLocationInformation = async () => {
         "https://api.openweathermap.org/geo/1.0/direct?q=" + location + "&limit=5&appid=" + openWeatherMapApiKey
     );
     const data = await response.json();
-    console.log(data);
+    //console.log(data);
     updateDropdown(data);
 };
 
@@ -65,10 +65,10 @@ const addFavorite = (location) => {
     const favoriteIndex = favorites.findIndex(favorite => favorite.name === location.name && favorite.country === location.country);
     if (favoriteIndex === -1) {
         favorites.push(location);
-        console.log("Added to favorites:", location);
+        //console.log("Added to favorites:", location);
     } else {
         favorites.splice(favoriteIndex, 1);
-        console.log("Removed from favorites:", location);
+        //console.log("Removed from favorites:", location);
     }
     localStorage.setItem("favorites", JSON.stringify(favorites));
     updateDropdown([]); // Refresh the dropdown to show the updated favorites
@@ -138,7 +138,7 @@ const updateDropdown = (locations) => {
         favoriteButton.style.marginLeft = "10px"; // Add some margin to separate the button from the text
         favoriteButton.addEventListener("click", (event) => {
             event.stopPropagation(); // Stop the click event from propagating to the parent li
-            console.log("Favorite button clicked for:", location);
+            // console.log("Favorite button clicked for:", location);
             addFavorite(location);
             updateDropdown(locations); // Refresh the dropdown to show the updated favorites
         });
@@ -190,11 +190,6 @@ const showWeatherOfTheDay = (data) => {
     const sunset = new Date(data.sys.sunset * 1000);
     const currentTime = new Date();
 
-    // Log the times for debugging
-    console.log("Current Time:", currentTime);
-    console.log("Sunrise:", sunrise);
-    console.log("Sunset:", sunset);
-
     // Create elements to display weather information
     const cityElement = document.createElement("h1");
     const img = document.createElement("img");
@@ -203,8 +198,6 @@ const showWeatherOfTheDay = (data) => {
     const feelsLikeElement = document.createElement("p");
     const humidityElement = document.createElement("p");
     const windElement = document.createElement("p");
-
-    console.log(currentTime);
 
     // Set background color based on temperature
     let backgroundColor;
@@ -226,8 +219,6 @@ const showWeatherOfTheDay = (data) => {
 
     // Set background color based on time of day
     const isNight = currentTime < sunrise || currentTime > sunset;
-    console.log("Is it night?", isNight);
-
     if (isNight) {
         // Apply a dimming effect by adjusting the alpha channel
         body.style.backgroundColor = adjustBrightness(backgroundColor, 0.3);
