@@ -259,10 +259,12 @@ const showWeatherOf24Hours = (data) => {
 
     // Create a table
     const table = document.createElement("table");
-    table.classList.add("table", "table-striped");
+    table.classList.add("table", "table-striped", "table-bordered", "table-responsive");
 
     // Create table header
     const thead = document.createElement("thead");
+    thead.classList.add("table-dark");
+
     const headerRow = document.createElement("tr");
     const headers = ["Time", "Icon", "Temperature", "Feels Like", "Weather", "Humidity", "Wind Speed"];
     headers.forEach(headerText => {
@@ -368,10 +370,13 @@ const showWeatherOf5Days = (data) => {
 
     // Create a table to display weekly weather information
     const table = document.createElement("table");
-    table.classList.add("table", "table-striped", "table-bordered");
+    table.classList.add("table", "table-striped", "table-bordered", "table-responsive");
 
-    // Create table header and body
+    // Create table header
     const thead = document.createElement("thead");
+    thead.classList.add("table-dark");
+
+    // Create table body
     const tbody = document.createElement("tbody");
 
     // Create table headers
